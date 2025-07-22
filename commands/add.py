@@ -2,7 +2,7 @@ import os
 import json
 from commands import hash_object
 
-INDEX_PATH = os.path.join(".git", "index.json")
+INDEX_PATH = os.path.join(".gitC", "index.json")
 
 def read_index():
     if os.path.exists(INDEX_PATH):
@@ -29,7 +29,6 @@ def git_add(path):
     index.append({
         "path": path,
         "oid": oid,
-        "type": "blob"
     })
 
     write_index(index)

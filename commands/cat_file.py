@@ -2,7 +2,7 @@ import os
 import zlib
 
 def cat_file(oid):
-    path = os.path.join(".git", "objects", oid[:2], oid[2:])
+    path = os.path.join(".gitC", "objects", oid[:2], oid[2:])
     
     print(f"[DEBUG] Looking for object at: {path}")
 

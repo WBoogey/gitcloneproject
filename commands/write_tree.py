@@ -3,7 +3,7 @@ import json
 import hashlib
 import zlib
 
-INDEX_PATH = os.path.join(".git", "index.json")
+INDEX_PATH = os.path.join(".gitC", "index.json")
 
 def write_tree(return_oid=False):
     # Lire l'index
@@ -14,7 +14,7 @@ def write_tree(return_oid=False):
     with open(INDEX_PATH, "r") as f:
         entries = json.load(f)
 
-    # Construire le contenu de l'objet tree
+
     lines = []
     for entry in entries:
         mode = "100644"  # mode Unix pour un fichier normal
@@ -31,8 +31,8 @@ def write_tree(return_oid=False):
     oid = hashlib.sha1(full_data).hexdigest()
     compressed = zlib.compress(full_data)
 
-    # Écrire dans .git/objects/<sha>
-    object_dir = os.path.join(".git", "objects", oid[:2])
+    # Écrire dans .gitC/objects/<sha>
+    object_dir = os.path.join(".gitC", "objects", oid[:2])
     object_path = os.path.join(object_dir, oid[2:])
     os.makedirs(object_dir, exist_ok=True)
     with open(object_path, "wb") as f:

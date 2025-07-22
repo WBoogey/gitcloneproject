@@ -18,7 +18,7 @@ def hash_object(path, write=False):
 
     if write:
         compressed = zlib.compress(full_data)
-        object_dir = os.path.join(".git", "objects", oid[:2])
+        object_dir = os.path.join(".gitC", "objects", oid[:2])
         object_path = os.path.join(object_dir, oid[2:])
         os.makedirs(object_dir, exist_ok=True)
         with open(object_path, "wb") as f:

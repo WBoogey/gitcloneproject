@@ -1,7 +1,7 @@
 import os
 
 def git_init():
-    git_dir = ".git"
+    git_dir = ".gitC"
     if os.path.exists(git_dir):
         print("Repository already initialized.")
         return
@@ -14,4 +14,4 @@ def git_init():
     with open(os.path.join(git_dir, "HEAD"), "w") as f:
         f.write("ref: refs/heads/master\n")
 
-    print("Initialized empty Git repository in .git/")
+    print("Initialized empty Git repository in .gitC/")

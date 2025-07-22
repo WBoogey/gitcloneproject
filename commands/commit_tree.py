@@ -24,8 +24,8 @@ def commit_tree(tree_oid, message, parent=None):
     oid = hashlib.sha1(full_data).hexdigest()
     compressed = zlib.compress(full_data)
 
-    # Sauvegarde dans .git/objects/
-    object_dir = os.path.join(".git", "objects", oid[:2])
+    # Sauvegarde dans .gitC/objects/
+    object_dir = os.path.join(".gitC", "objects", oid[:2])
     object_path = os.path.join(object_dir, oid[2:])
     os.makedirs(object_dir, exist_ok=True)
     with open(object_path, "wb") as f:
