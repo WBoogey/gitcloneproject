@@ -1,45 +1,81 @@
 import os
-import json
 import hashlib
 import zlib
 
-INDEX_PATH = os.path.join(".gitC", "index.json")
-
 def write_tree(return_oid=False):
+    """Crée un objet tree à partir de l'index"""
+    index_path = os.path.join(".gitC", "index")
+    
+    if not os.path.exists(index_path):
+        print("Error: No index found. Use 'git add' to add files first.")
+        return None if return_oid else None
+    
     # Lire l'index
-    if not os.path.exists(INDEX_PATH):
-        print("Index not found.")
-        return None
-
-    with open(INDEX_PATH, "r") as f:
-        entries = json.load(f)
-
-
-    lines = []
+    entries = []
+    with open(index_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                parts = line.split()
+                if len(parts) >= 2:
+                    # Format attendu: <mode> <type> <hash> <filename>
+                    # Ou format simple: <hash> <filename>
+                    if len(parts) == 2:
+                        # Format simple: hash filename
+                        hash_val, filename = parts
+                        entries.append({
+                            "mode": "100644",  # Mode par défaut pour un fichier normal
+                            "type": "blob",    # Type par défaut
+                            "hash": hash_val,
+                            "name": filename
+                        })
+                    elif len(parts) >= 4:
+                        # Format complet: mode type hash filename
+                        mode, type_, hash_val = parts[0], parts[1], parts[2]
+                        filename = " ".join(parts[3:])  # Au cas où le nom contient des espaces
+                        entries.append({
+                            "mode": mode,
+                            "type": type_,
+                            "hash": hash_val,
+                            "name": filename
+                        })
+    
+    if not entries:
+        print("Error: Index is empty. Use 'git add' to add files first.")
+        return None if return_oid else None
+    
+    # Trier les entrées par nom (comme Git le fait)
+    entries.sort(key=lambda x: x["name"])
+    
+    # Construire le contenu du tree
+    tree_content = b""
     for entry in entries:
-        mode = "100644"  # mode Unix pour un fichier normal
-        type_ = entry["type"]
-        oid = entry["oid"]
-        path = entry["path"]
-        lines.append(f"{mode} {type_} {oid}\t{path}")
-
-    tree_content = "\n".join(lines).encode()
+        mode = entry["mode"]
+        name = entry["name"]
+        hash_bytes = bytes.fromhex(entry["hash"])
+        
+        # Format: "<mode> <name>\0<hash_bytes>"
+        entry_line = f"{mode} {name}".encode() + b"\0" + hash_bytes
+        tree_content += entry_line
+    
+    # Créer l'objet tree
     header = f"tree {len(tree_content)}\0".encode()
     full_data = header + tree_content
-
-    # SHA-1 et compression
-    oid = hashlib.sha1(full_data).hexdigest()
+    
+    # Calculer le SHA-1
+    tree_oid = hashlib.sha1(full_data).hexdigest()
+    
+    # Sauvegarder l'objet
     compressed = zlib.compress(full_data)
-
-    # Écrire dans .gitC/objects/<sha>
-    object_dir = os.path.join(".gitC", "objects", oid[:2])
-    object_path = os.path.join(object_dir, oid[2:])
+    object_dir = os.path.join(".gitC", "objects", tree_oid[:2])
+    object_path = os.path.join(object_dir, tree_oid[2:])
     os.makedirs(object_dir, exist_ok=True)
+    
     with open(object_path, "wb") as f:
         f.write(compressed)
-
-    # Soit retourner, soit afficher le SHA
+    
     if return_oid:
-        return oid
+        return tree_oid
     else:
-        print(oid)
+        print(tree_oid)
+        return tree_oid
