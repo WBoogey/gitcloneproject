@@ -1,35 +1,52 @@
 import os
-import json
-from commands import hash_object
-
-INDEX_PATH = os.path.join(".gitC", "index.json")
-
-def read_index():
-    if os.path.exists(INDEX_PATH):
-        with open(INDEX_PATH, "r") as f:
-            return json.load(f)
-    return []
-
-def write_index(entries):
-    with open(INDEX_PATH, "w") as f:
-        json.dump(entries, f, indent=2)
+import hashlib
+import zlib
 
 def git_add(path):
+    """Ajoute un fichier à l'index"""
     if not os.path.isfile(path):
-        print(f"Error: file '{path}' does not exist.")
+        print(f"Error: file '{path}' not found.")
         return
-
-    oid = hash_object.hash_object(path, write=True)
-
-    index = read_index()
-
-    # Retirer les anciennes entrées pour ce fichier
-    index = [entry for entry in index if entry["path"] != path]
-
-    index.append({
-        "path": path,
-        "oid": oid,
-    })
-
-    write_index(index)
-    print(f"Added '{path}' to index.")
+    
+    # Lire le fichier
+    with open(path, "rb") as f:
+        data = f.read()
+    
+    # Créer l'objet blob
+    header = f"blob {len(data)}\0".encode()
+    full_data = header + data
+    oid = hashlib.sha1(full_data).hexdigest()
+    
+    # Sauvegarder l'objet blob
+    compressed = zlib.compress(full_data)
+    object_dir = os.path.join(".gitC", "objects", oid[:2])
+    object_path = os.path.join(object_dir, oid[2:])
+    os.makedirs(object_dir, exist_ok=True)
+    
+    with open(object_path, "wb") as f:
+        f.write(compressed)
+    
+    # Ajouter à l'index
+    index_path = os.path.join(".gitC", "index")
+    
+    # Lire l'index existant
+    entries = {}
+    if os.path.exists(index_path):
+        with open(index_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    parts = line.split()
+                    if len(parts) >= 4:
+                        filename = " ".join(parts[3:])
+                        entries[filename] = line
+    
+    # Ajouter/mettre à jour l'entrée
+    entries[path] = f"100644 blob {oid} {path}"
+    
+    # Réécrire l'index
+    with open(index_path, "w") as f:
+        for entry in sorted(entries.values()):
+            f.write(entry + "\n")
+    
+    print(f"Added {path} to index")
