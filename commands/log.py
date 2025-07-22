@@ -2,7 +2,7 @@ import os
 import zlib
 
 def get_commit(oid):
-    path = os.path.join(".git", "objects", oid[:2], oid[2:])
+    path = os.path.join(".gitC", "objects", oid[:2], oid[2:])
     with open(path, "rb") as f:
         compressed = f.read()
     full_data = zlib.decompress(compressed)
@@ -25,10 +25,10 @@ def get_commit(oid):
     return commit
 
 def get_head_oid():
-    with open(".git/HEAD", "r") as f:
+    with open(".gitC/HEAD", "r") as f:
         ref_line = f.read().strip()
     if ref_line.startswith("ref: "):
-        ref_path = os.path.join(".git", ref_line[5:])
+        ref_path = os.path.join(".gitC", ref_line[5:])
         if os.path.exists(ref_path):
             with open(ref_path, "r") as f:
                 return f.read().strip()

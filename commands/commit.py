@@ -2,22 +2,22 @@ import os
 from commands import write_tree, commit_tree
 
 def get_head_ref():
-    with open(".git/HEAD", "r") as f:
+    with open(".gitC/HEAD", "r") as f:
         ref_line = f.read().strip()
     if ref_line.startswith("ref: "):
-        return ref_line[5:]  # ex: refs/heads/master
+        return ref_line[5:] 
     return None
 
 def get_head_oid():
     ref = get_head_ref()
-    ref_path = os.path.join(".git", ref)
+    ref_path = os.path.join(".gitC", ref)
     if os.path.exists(ref_path):
         with open(ref_path, "r") as f:
             return f.read().strip()
     return None
 
 def update_ref(ref, oid):
-    ref_path = os.path.join(".git", ref)
+    ref_path = os.path.join(".gitC", ref)
     with open(ref_path, "w") as f:
         f.write(oid + "\n")
 
