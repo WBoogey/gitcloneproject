@@ -1,5 +1,5 @@
 import sys
-from commands import init, hash_object, cat_file, add, write_tree, commit_tree, commit, log
+from commands import init, hash_object, cat_file, add, write_tree, commit_tree, commit, log, rm, status
 
 def main():
     print("[DEBUG] Entrée dans main()")
@@ -62,6 +62,24 @@ def main():
 
     elif command == "log":
         log.git_log()
+
+    elif command == "rm":
+        if len(sys.argv) < 3:
+            print("Usage: python git.py rm [--cached] <file>")
+            return
+        
+        if "--cached" in sys.argv:
+            if len(sys.argv) < 4:
+                print("Usage: python git.py rm --cached <file>")
+                return
+            path = sys.argv[3]
+            rm.git_rm_cached(path)
+        else:
+            path = sys.argv[2]
+            rm.git_rm(path)
+
+    elif command == "status":
+        status.git_status()
 
     else:
         print(f"Unknown command: {command}")
