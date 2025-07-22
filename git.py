@@ -1,11 +1,18 @@
 import sys
-from commands import init, hash_object, cat_file, add, write_tree, commit_tree, commit, log, rm, status
+from commands import init, hash_object, cat_file, add, write_tree, commit_tree, commit, log, rm, status, ls_files, ls_tree
 
 def main():
     print("[DEBUG] Entrée dans main()")
 
     if len(sys.argv) < 2:
         print("Usage: python git.py <command>")
+        return
+
+    if sys.argv[1] == "ls-files":
+        ls_files.run(sys.argv[2:])
+        return
+    if sys.argv[1] == "ls-tree":
+        ls_tree.run(sys.argv[2:])
         return
 
     command = sys.argv[1]
