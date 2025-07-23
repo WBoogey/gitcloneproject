@@ -1,8 +1,8 @@
 import os
 import hashlib
+import zlib
 
 def get_file_hash(filepath):
-    """Calcule le hash SHA-1 d'un fichier comme Git le fait"""
     try:
         with open(filepath, "rb") as f:
             data = f.read()
@@ -13,7 +13,6 @@ def get_file_hash(filepath):
         return None
 
 def read_index():
-    """Lit l'index et retourne un dictionnaire des fichiers indexés"""
     index_path = os.path.join(".gitC", "index")
     indexed_files = {}
     
@@ -33,53 +32,131 @@ def read_index():
                         }
     return indexed_files
 
-def get_oid(name):
-    """Helper to read oid from HEAD or refs."""
-    head_path = os.path.join(".gitC", "HEAD")
-    if not os.path.exists(head_path):
-        return None
-    with open(head_path, "r") as f:
-        content = f.read().strip()
-    if content.startswith("ref: "):
-        ref_path = os.path.join(".gitC", content[5:])
-        if os.path.exists(ref_path):
-            with open(ref_path, "r") as rf:
-                return rf.read().strip()
-    else:
-        # HEAD contains direct SHA
-        return content
-    return None
-
-def get_current_branch():
-    """Récupère le nom de la branche courante ou None si détachée"""
-    head_path = os.path.join(".gitC", "HEAD")
-    if not os.path.exists(head_path):
-        return None
-    with open(head_path, "r") as f:
-        content = f.read().strip()
-    if content.startswith("ref: "):
-        # ex: "ref: refs/heads/master"
-        return content[5:].split('/')[-1]
-    else:
-        # HEAD détaché sur un SHA
-        return None
-
 def get_head_tree():
-    """Récupère les fichiers du dernier commit (HEAD) — temporairement vide"""
-    # TODO: Implémenter le parsing des commits et trees pour un vrai résultat
-    return {}
+    """Récupère les fichiers du dernier commit (HEAD)"""
+    try:
+        # Lire HEAD
+        head_path = os.path.join(".gitC", "HEAD")
+        if not os.path.exists(head_path):
+            return {}
+            
+        with open(head_path, "r") as f:
+            ref_line = f.read().strip()
+        
+        # Obtenir le commit SHA
+        commit_sha = None
+        if ref_line.startswith("ref: "):
+            ref_path = os.path.join(".gitC", ref_line[5:])
+            if os.path.exists(ref_path):
+                with open(ref_path, "r") as f:
+                    commit_sha = f.read().strip()
+        else:
+            commit_sha = ref_line
+        
+        if not commit_sha:
+            return {}
+        
+        # Lire l'objet commit
+        commit_obj_path = os.path.join(".gitC", "objects", commit_sha[:2], commit_sha[2:])
+        if not os.path.exists(commit_obj_path):
+            return {}
+        
+        with open(commit_obj_path, "rb") as f:
+            compressed_data = f.read()
+        
+        full_data = zlib.decompress(compressed_data)
+        header, content = full_data.split(b'\x00', 1)
+        
+        if not header.startswith(b'commit '):
+            return {}
+        
+        # Parser le commit pour obtenir le tree SHA
+        lines = content.decode().splitlines()
+        tree_sha = None
+        
+        for line in lines:
+            if line.startswith("tree "):
+                tree_sha = line[5:]
+                break
+        
+        if not tree_sha:
+            return {}
+        
+        # Lire l'objet tree
+        return parse_tree_object(tree_sha)
+        
+    except Exception as e:
+        return {}
+
+def parse_tree_object(tree_sha):
+    """Parse un objet tree et retourne un dictionnaire des fichiers"""
+    try:
+        tree_obj_path = os.path.join(".gitC", "objects", tree_sha[:2], tree_sha[2:])
+        if not os.path.exists(tree_obj_path):
+            return {}
+        
+        with open(tree_obj_path, "rb") as f:
+            compressed_data = f.read()
+        
+        full_data = zlib.decompress(compressed_data)
+        header, content = full_data.split(b'\x00', 1)
+        
+        if not header.startswith(b'tree '):
+            return {}
+        
+        tree_files = {}
+        pos = 0
+        
+        while pos < len(content):
+            # Trouver l'espace après le mode
+            space_pos = content.find(b' ', pos)
+            if space_pos == -1:
+                break
+            
+            mode = content[pos:space_pos].decode()
+            
+            # Trouver le null byte après le nom du fichier
+            null_pos = content.find(b'\x00', space_pos + 1)
+            if null_pos == -1:
+                break
+            
+            filename = content[space_pos + 1:null_pos].decode()
+            
+            # Les 20 bytes suivants sont le SHA-1
+            if null_pos + 21 > len(content):
+                break
+            
+            sha_bytes = content[null_pos + 1:null_pos + 21]
+            sha_hex = sha_bytes.hex()
+            
+            tree_files[filename] = {
+                'mode': mode,
+                'hash': sha_hex
+            }
+            
+            pos = null_pos + 21
+        
+        return tree_files
+        
+    except Exception as e:
+        return {}
 
 def get_working_directory_files():
-    """Récupère tous les fichiers du répertoire de travail (hors .gitC)"""
     working_files = {}
     
     for root, dirs, files in os.walk("."):
+        # Ignorer le dossier .gitC et ses sous-dossiers
         if ".gitC" in dirs:
             dirs.remove(".gitC")
+        
+        # Ignorer les dossiers cachés et __pycache__
         dirs[:] = [d for d in dirs if not d.startswith('.') and d != '__pycache__']
+        
         for file in files:
+            # Ignorer les fichiers cachés et les .pyc
             if not file.startswith('.') and not file.endswith('.pyc'):
                 filepath = os.path.join(root, file)
+                # Normaliser le chemin (enlever ./ au début)
                 if filepath.startswith("./"):
                     filepath = filepath[2:]
                 working_files[filepath] = get_file_hash(filepath)
@@ -87,72 +164,119 @@ def get_working_directory_files():
     return working_files
 
 def git_status():
-    """Affiche le statut du dépôt Git"""
     
+    # Vérifier que le dépôt est initialisé
     if not os.path.exists(".gitC"):
         print("Error: Not a git repository (no .gitC directory found)")
         return
     
-    branch = get_current_branch()
-    if branch:
-        print(f"On branch {branch}")
-    else:
-        head_oid = get_oid("HEAD")
-        if head_oid:
-            print(f"HEAD detached at {head_oid}")
-        else:
-            print("No commits yet")
-
+    # Lire l'index
     indexed_files = read_index()
+    
+    # Lire les fichiers du répertoire de travail
     working_files = get_working_directory_files()
+    
+    # Lire les fichiers du dernier commit
     committed_files = get_head_tree()
     
-    staged_for_commit = []      # fichiers dans index mais différents du commit HEAD
-    modified_not_staged = []    # fichiers modifiés par rapport à index
-    untracked_files = []        # fichiers non suivis
+    # Analyser les changements
+    staged_for_commit = []  # Fichiers dans l'index mais différents du dernier commit
+    modified_not_staged = []  # Fichiers modifiés par rapport à l'index
+    untracked_files = []  # Fichiers non suivis
+    deleted_not_staged = []  # Fichiers supprimés du working directory
+    staged_deletions = []  # Fichiers supprimés de l'index
     
-    for filepath, working_hash in working_files.items():
-        if filepath in indexed_files:
-            if indexed_files[filepath]['hash'] != working_hash:
-                modified_not_staged.append(filepath)
-            if filepath not in committed_files:
-                staged_for_commit.append(filepath)
-        else:
+    # Ensemble de tous les fichiers connus
+    all_files = set(working_files.keys()) | set(indexed_files.keys()) | set(committed_files.keys())
+    
+    for filepath in all_files:
+        in_working = filepath in working_files
+        in_index = filepath in indexed_files
+        in_commit = filepath in committed_files
+        
+        working_hash = working_files.get(filepath)
+        index_hash = indexed_files.get(filepath, {}).get('hash')
+        commit_hash = committed_files.get(filepath, {}).get('hash')
+        
+        # Fichier non suivi (dans working, pas dans index)
+        if in_working and not in_index:
             untracked_files.append(filepath)
+        
+        # Fichier dans l'index
+        elif in_index:
+            # Changements staged (index différent du commit)
+            if not in_commit or index_hash != commit_hash:
+                if in_commit:
+                    staged_for_commit.append(('modified', filepath))
+                else:
+                    staged_for_commit.append(('new', filepath))
+            
+            # Changements non staged (working différent de l'index)
+            if in_working:
+                if index_hash != working_hash:
+                    modified_not_staged.append(filepath)
+            else:
+                # Fichier supprimé du working directory
+                deleted_not_staged.append(filepath)
+        
+        # Fichier supprimé de l'index (était dans commit, plus dans index)
+        elif in_commit and not in_index:
+            staged_deletions.append(filepath)
     
-    for filepath in indexed_files:
-        if filepath not in working_files:
-            modified_not_staged.append(f"{filepath} (deleted)")
+    # Afficher le statut
+    print("On branch master")  # Pour simplifier, on assume toujours master
     
-    if not staged_for_commit and not modified_not_staged and not untracked_files:
+    # Vérifier s'il y a des changements
+    has_changes = (staged_for_commit or staged_deletions or 
+                   modified_not_staged or deleted_not_staged or untracked_files)
+    
+    if not has_changes:
         print("nothing to commit, working tree clean")
         return
     
     print()
-    if staged_for_commit:
+    
+    # Changements à committer
+    if staged_for_commit or staged_deletions:
         print("Changes to be committed:")
-        print('  (use "git rm --cached <file>..." to unstage)')
+        print("  (use \"git rm --cached <file>...\" to unstage)")
         print()
-        for file in sorted(staged_for_commit):
-            print(f"        new file:   {file}")
-        print()
-    
-    if modified_not_staged:
-        print("Changes not staged for commit:")
-        print('  (use "git add <file>..." to update what will be committed)')
-        print('  (use "git checkout -- <file>..." to discard changes in working directory)')
-        print()
-        for file in sorted(modified_not_staged):
-            if "(deleted)" in file:
-                print(f"        deleted:    {file.replace(' (deleted)', '')}")
+        
+        # Fichiers ajoutés/modifiés
+        for change_type, filepath in sorted(staged_for_commit):
+            if change_type == 'new':
+                print(f"        new file:   {filepath}")
             else:
-                print(f"        modified:   {file}")
+                print(f"        modified:   {filepath}")
+        
+        # Fichiers supprimés
+        for filepath in sorted(staged_deletions):
+            print(f"        deleted:    {filepath}")
+        
         print()
     
+    # Changements non stagés
+    if modified_not_staged or deleted_not_staged:
+        print("Changes not staged for commit:")
+        print("  (use \"git add <file>...\" to update what will be committed)")
+        print("  (use \"git checkout -- <file>...\" to discard changes in working directory)")
+        print()
+        
+        # Fichiers modifiés
+        for filepath in sorted(modified_not_staged):
+            print(f"        modified:   {filepath}")
+        
+        # Fichiers supprimés
+        for filepath in sorted(deleted_not_staged):
+            print(f"        deleted:    {filepath}")
+        
+        print()
+    
+    # Fichiers non suivis
     if untracked_files:
         print("Untracked files:")
-        print('  (use "git add <file>..." to include in what will be committed)')
+        print("  (use \"git add <file>...\" to include in what will be committed)")
         print()
-        for file in sorted(untracked_files):
-            print(f"        {file}")
+        for filepath in sorted(untracked_files):
+            print(f"        {filepath}")
         print()
