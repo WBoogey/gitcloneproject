@@ -5,7 +5,7 @@ def get_head_ref():
     with open(".gitC/HEAD", "r") as f:
         ref_line = f.read().strip()
     if ref_line.startswith("ref: "):
-        return ref_line[5:] 
+        return ref_line[5:]
     return None
 
 def get_head_oid():

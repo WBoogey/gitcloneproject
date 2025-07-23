@@ -1,11 +1,14 @@
 import sys
-from commands import init, hash_object, cat_file, add, write_tree, commit_tree, commit, log, rm, status
+from commands import (
+    init, hash_object, cat_file, add, write_tree, commit_tree, commit, log,
+    rm, status, checkout, reset
+)
 
 def main():
     print("[DEBUG] Entrée dans main()")
 
     if len(sys.argv) < 2:
-        print("Usage: python git.py <command>")
+        print("Usage: python git.py <command> [options]")
         return
 
     command = sys.argv[1]
@@ -67,7 +70,7 @@ def main():
         if len(sys.argv) < 3:
             print("Usage: python git.py rm [--cached] <file>")
             return
-        
+
         if "--cached" in sys.argv:
             if len(sys.argv) < 4:
                 print("Usage: python git.py rm --cached <file>")
@@ -80,6 +83,35 @@ def main():
 
     elif command == "status":
         status.git_status()
+
+    elif command == "checkout":
+        # Supporte git.py checkout [-b <branch>] <target>
+        if len(sys.argv) < 3:
+            print("Usage: python git.py checkout <target> OR python git.py checkout -b <branch>")
+            return
+
+        if sys.argv[2] == "-b":
+            if len(sys.argv) < 4:
+                print("Usage: python git.py checkout -b <branch>")
+                return
+            branch = sys.argv[3]
+            checkout.git_checkout(branch, new_branch=True)
+        else:
+            target = sys.argv[2]
+            checkout.git_checkout(target, new_branch=False)
+
+    elif command == "reset":
+        # Supporte git.py reset [--mixed|--hard] <target>
+        if len(sys.argv) < 4:
+            print("Usage: python git.py reset [--mixed|--hard] <target>")
+            return
+
+        mode = sys.argv[2]
+        target = sys.argv[3]
+        if mode not in ["--mixed", "--hard"]:
+            print("Supported reset modes: --mixed, --hard")
+            return
+        reset.git_reset(mode, target)
 
     else:
         print(f"Unknown command: {command}")

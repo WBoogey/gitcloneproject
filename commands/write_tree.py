@@ -79,3 +79,35 @@ def write_tree(return_oid=False):
     else:
         print(tree_oid)
         return tree_oid
+    
+def parse_tree(data):
+    """
+    Parse les données brutes d'un objet tree Git et retourne une liste
+    d'entrées au format dict {mode, path, oid}
+
+    Format d'une entrée dans un tree Git:
+    <mode> SPACE <filename> NULL <20 bytes SHA binaire>
+
+    Args:
+      data (bytes): données décompressées du tree (sans l'en-tête)
+
+    Returns:
+      list of dict: [{mode, path, oid}, ...]
+    """
+    entries = []
+    i = 0
+    while i < len(data):
+        space = data.find(b" ", i)
+        mode = data[i:space].decode("utf-8")
+
+        null = data.find(b"\x00", space)
+        path = data[space + 1:null].decode("utf-8")
+
+        oid_bin = data[null + 1:null + 21]
+        oid = oid_bin.hex()
+
+        entries.append({"mode": mode, "path": path, "oid": oid})
+
+        i = null + 21
+
+    return entries
