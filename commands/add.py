@@ -3,10 +3,45 @@ import hashlib
 import zlib
 
 def git_add(path):
-    """Ajoute un fichier à l'index"""
+    """Ajoute un fichier à l'index ou gère sa suppression"""
+    
+    # Vérifier si le fichier existe
     if not os.path.isfile(path):
-        print(f"Error: file '{path}' not found.")
-        return
+        # Vérifier si le fichier était dans l'index (pour gérer les suppressions)
+        index_path = os.path.join(".gitC", "index")
+        
+        if os.path.exists(index_path):
+            # Lire l'index existant
+            entries = {}
+            file_was_tracked = False
+            
+            with open(index_path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            filename = " ".join(parts[3:])
+                            if filename == path:
+                                file_was_tracked = True
+                                # Ne pas ajouter cette entrée (= suppression)
+                                continue
+                            entries[filename] = line
+            
+            if file_was_tracked:
+                # Le fichier était suivi mais n'existe plus -> "stage" la suppression
+                with open(index_path, "w") as f:
+                    for entry in sorted(entries.values()):
+                        f.write(entry + "\n")
+                
+                print(f"Staged deletion of '{path}'")
+                return
+            else:
+                print(f"Error: file '{path}' not found and was not being tracked.")
+                return
+        else:
+            print(f"Error: file '{path}' not found.")
+            return
     
     # Lire le fichier
     with open(path, "rb") as f:
