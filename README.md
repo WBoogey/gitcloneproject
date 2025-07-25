@@ -8,14 +8,14 @@ La commande `ls-files` affiche les fichiers actuellement présents dans l’inde
 
 ### ➤ Utilisation
 
-```bash
+`
 python3 main.py ls-files
 Elle retourne la liste des fichiers indexés.
 
-🌳 Commande ls-tree
+## 🌳 Commande ls-tree
 
 La commande ls-tree <tree_sha> permet d’afficher le contenu d’un objet tree (répertoire) à partir de son SHA-1. Cela correspond à ce que fait git ls-tree dans un vrai dépôt Git.
-
+```bash
 ➤ Utilisation
 python3 main.py ls-tree <sha_du_tree>
 🔍 Astuce : tu peux obtenir le SHA d’un tree avec la commande write-tree.
