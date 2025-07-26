@@ -1,122 +1,177 @@
-Git from Scratch – Student Project
-This project involves reimplementing core Git functionality in Python. It will help you understand Git's internal architecture and make you comfortable with both its plumbing and porcelain commands.
+Voici un exemple de README complet pour ton projet Mini Git en Python :
 
-🎯 Project Scope
-You will implement a subset of Git commands, both low-level (plumbing) and user-facing (porcelain). Your goal is to ensure they behave similarly to real Git, within clearly defined constraints.
+---
 
-🛠 Plumbing Commands
-git hash-object [-w] <file>
-Creates a blob object from file content and writes its SHA-1 to stdout.
-❌ Reject directories or missing files.
-git cat-file -t|-p <oid>
--t: Print object type.
--p: Pretty-print blob/tree/commit content.
-❌ Reject invalid OIDs or missing options.
-git write-tree
-Create a tree object from the staging area.
-Writes SHA-1 of the tree to stdout.
-git commit-tree <tree_sha> -m "msg" [-p <parent>]
-Creates a commit object pointing to a tree (and parent commit if any) and writes its oid to stdout
-Requires -m message.
-❌ No annotated tags.
-🧑‍💻 Porcelain Commands
-git init [<dir>]
-Initializes a Git repository in the given directory.
-Create .git/objects, .git/refs/heads, HEAD, and minimal config
-git add <file>…
-Adds files to the staging area (not directories).
-❌ No -p, no wildcards.
-git rm <file>…
-Removes a file from working directory and index.
-git commit -m "msg"
-Runs write-tree, creates a commit with HEAD as parent.
-❌ No editor or message prompt.
-git status
-Shows staged and unstaged changes.
-git checkout [-b] <branch|sha>
-Switch to existing commit or branch.
--b <branch> creates a new branch.
-Change HEAD, update working dir, check for conflicts
-git reset [--soft|--mixed|--hard] <sha>
---soft: move HEAD
---mixed: + reset index
---hard: + reset working directory
-❌ No file-specific reset.
-git log
-Print commit history from HEAD (one-line summary ok).
-git ls-files
-List all files in the index.
-git ls-tree <tree_sha>
-List contents of a tree object.
-git rev-parse <ref>
-Convert ref/branch/HEAD into SHA-1.
-❌ No complex selectors
-git show-ref
-List all refs and their hashes.
-🧠 Advanced Feature: Merge Support
-git merge <branch|sha>
-Perform 3-way merge and create a merge commit with 2 parents.
-On conflict: insert <<<<<<<, =======, >>>>>>> markers into file(s).
-❌ No rebase, squash, or fast-forward-only merges.
-📄 Gitignore
-Handle .gitignore
-Use simple glob-style matching (e.g., *.log, build/)
-❌ No negation or nested .gitignore files.
-🏗 Index Implementation
-You are free to implement the index your way.
-✅ Bonus if it matches Git’s format closely.
-❌ Out of Scop
-git push and git update-index are NOT required.
-No support for remotes, rebase, tags, or stashing.
-✅ Deliverables
-A working implementation of the listed commands.
-Tests and example usage for each.
-Clean error handling for all unsupported cases.
-⏱ Time Estimate
-Total time: 6–9 days
-Use AI if needed, but understand what you're coding.
+# 🧪 Mini Git – Implémentation Simplifiée de Git en Python
 
+Ce projet est une reconstitution simplifiée de Git, codée en Python. Il a été développé à des fins pédagogiques afin de mieux comprendre le fonctionnement interne de Git (index, objets, arbres, commits…).
 
+---
 
+## 🛠️ Prérequis
 
+* Python 3.11 ou supérieur
+* Système Unix (Linux/macOS recommandé)
 
+---
 
+## 🚀 Installation & Initialisation
 
-# Mini Git – Commandes `ls-files` et `ls-tree`
-
-Ce projet est une implémentation simplifiée de Git en Python.
-
-## 📂 Commande `ls-files`
-
-La commande `ls-files` affiche les fichiers actuellement présents dans l’index (aussi appelé *staging area*), c’est-à-dire les fichiers suivis par Git à ce moment.
-
-### ➤ Utilisation
-
-`
-python3 main.py ls-files
-Elle retourne la liste des fichiers indexés.
-
-## 🌳 Commande ls-tree
-
-La commande ls-tree <tree_sha> permet d’afficher le contenu d’un objet tree (répertoire) à partir de son SHA-1. Cela correspond à ce que fait git ls-tree dans un vrai dépôt Git.
 ```bash
-➤ Utilisation
-python3 main.py ls-tree <sha_du_tree>
-🔍 Astuce : tu peux obtenir le SHA d’un tree avec la commande write-tree.
-❌ Problème : Fichier index manquant ou corrompu
+python main.py init
+```
 
-Si vous avez une erreur liée à un index manquant ou cassé, vous pouvez simplement le régénérer.
+Cette commande crée la structure `.git/` dans votre dossier de travail, avec tous les sous-dossiers nécessaires (`objects/`, `refs/`, `HEAD`, etc.).
 
-✅ Solution : Supprimer et régénérer l’index
-Supprimez le fichier .git/index :
+---
+
+## 📂 Commandes Disponibles
+
+### 📦 `init`
+
+Initialise un dépôt Git vide dans le dossier courant.
+
+```bash
+python main.py init
+```
+
+---
+
+### ➕ `add`
+
+Ajoute un fichier à l’index (zone de staging).
+
+```bash
+python main.py add <nom_fichier>
+```
+
+---
+
+### 🧱 `commit`
+
+Crée un commit à partir des fichiers présents dans l’index.
+
+```bash
+python main.py commit -m "Message du commit"
+```
+
+---
+
+### 🌳 `write-tree`
+
+Construit un objet arbre à partir de l’index.
+
+```bash
+python main.py write-tree
+```
+
+---
+
+### 📜 `log`
+
+Affiche l’historique des commits.
+
+```bash
+python main.py log
+```
+
+---
+
+### 📄 `ls-files`
+
+Affiche tous les fichiers présents dans l’index.
+
+```bash
+python main.py ls-files
+```
+
+⚠️ **Attention** : si vous obtenez une erreur de type `index file corrupt`, il faut :
+
+1. Supprimer le fichier `index` :
+
+   ```bash
+   rm .git/index
+   ```
+2. Re-stager les fichiers :
+
+   ```bash
+   python main.py add <fichier>
+   ```
+
+---
+
+### 🌲 `ls-tree`
+
+Affiche le contenu d’un objet `tree`.
+
+```bash
+python main.py ls-tree <sha_du_tree>
+```
+
+Pour tester, vous pouvez d’abord écrire un arbre avec :
+
+```bash
+python main.py write-tree
+```
+
+Puis utiliser le hash retourné :
+
+```bash
+python main.py ls-tree <sha>
+```
+
+---
+
+### 🔎 `cat-file`
+
+Permet d’inspecter un objet Git (blob, tree, commit).
+
+```bash
+python main.py cat-file -p <sha>
+```
+
+---
+
+### 🧪 `hash-object`
+
+Calcule le hash SHA-1 d’un fichier, le stocke comme objet blob.
+
+```bash
+python main.py hash-object -w <nom_fichier>
+```
+
+---
+
+## 👨‍💻 Arborescence Générée
+
+```
+.git/
+├── HEAD
+├── index
+├── objects/
+│   ├── <sha1>
+│   └── ...
+├── refs/
+│   └── heads/
+│       └── master
+```
+
+---
+
+## 🧼 Nettoyage en cas de bug
+
+Si vous rencontrez des erreurs avec l’index :
+
+```bash
 rm .git/index
-Ajoutez de nouveau tous les fichiers pour recréer l’index :
-python3 main.py add .
-Cela va automatiquement recréer un nouvel index avec tous les fichiers actuels du projet.
-🛠 Dépendances
+python main.py add <fichiers>
+```
 
-Python 3.11+
-Aucune librairie externe requise
+---
+
+Tu veux que je le mette aussi dans un fichier `README.md` prêt à push ?
+
+
 Bon comme j'arrivais pas à merge, si vous cherchez les commandes LS c'est sur la branche Ousmane
 
 ✍️ Auteurs
@@ -124,4 +179,4 @@ Ehoura Christ-Yvann
 Ousmane Sacko
 Daniel Komoe
 Kilian Izatoola
-Lien du Trello:https://trello.com/invite/b/687e08fcf44c53c69e140d66/ATTI66b547653940f5429054368f8df8707a196E77E2/📌-a-faire
+Lien du Trello: https://trello.com/invite/b/687e08fcf44c53c69e140d66/ATTI66b547653940f5429054368f8df8707a196E77E2/📌-a-faire
