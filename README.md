@@ -65,7 +65,7 @@ Use simple glob-style matching (e.g., *.log, build/)
 🏗 Index Implementation
 You are free to implement the index your way.
 ✅ Bonus if it matches Git’s format closely.
-❌ Out of Scope
+❌ Out of Scop
 git push and git update-index are NOT required.
 No support for remotes, rebase, tags, or stashing.
 ✅ Deliverables
