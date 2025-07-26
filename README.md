@@ -141,23 +141,6 @@ python main.py hash-object -w <nom_fichier>
 ```
 
 ---
-
-## 👨‍💻 Arborescence Générée
-
-```
-.git/
-├── HEAD
-├── index
-├── objects/
-│   ├── <sha1>
-│   └── ...
-├── refs/
-│   └── heads/
-│       └── master
-```
-
----
-
 ## 🧼 Nettoyage en cas de bug
 
 Si vous rencontrez des erreurs avec l’index :
