@@ -174,9 +174,13 @@ Tu veux que je le mette aussi dans un fichier `README.md` prêt à push ?
 
 Bon comme j'arrivais pas à merge, si vous cherchez les commandes LS c'est sur la branche Ousmane
 
-✍️ Auteurs
+✍️ Auteurs:
 Ehoura Christ-Yvann
+
 Ousmane Sacko
+
 Daniel Komoe
+
 Kilian Izatoola
+
 Lien du Trello: https://trello.com/invite/b/687e08fcf44c53c69e140d66/ATTI66b547653940f5429054368f8df8707a196E77E2/📌-a-faire
