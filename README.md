@@ -1,7 +1,3 @@
-Voici un exemple de README complet pour ton projet Mini Git en Python :
-
----
-
 # 🧪 Mini Git – Implémentation Simplifiée de Git en Python
 
 Ce projet est une reconstitution simplifiée de Git, codée en Python. Il a été développé à des fins pédagogiques afin de mieux comprendre le fonctionnement interne de Git (index, objets, arbres, commits…).
