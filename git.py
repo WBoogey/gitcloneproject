@@ -11,6 +11,13 @@ def main():
         print("Usage: python git.py <command> [options]")
         return
 
+    if sys.argv[1] == "ls-files":
+        ls_files.run(sys.argv[2:])
+        return
+    if sys.argv[1] == "ls-tree":
+        ls_tree.run(sys.argv[2:])
+        return
+
     command = sys.argv[1]
 
     if command == "init":

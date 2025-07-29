@@ -1,1 +1,3 @@
 .gitC
+*.pyc
+__pycache__/
